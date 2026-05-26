@@ -496,6 +496,12 @@
     min-height: 60px;
   }
   .notes-field textarea:focus { border-color: var(--accent); }
+
+  @media print {
+    body { background: #fff !important; }
+    .pdf-container { display: block !important; }
+  }
+  .pdf-container { display: none; }
 </style>
 </head>
 <body>
@@ -573,10 +579,10 @@ const CUSTOMERS = {
       { code: 'MRCTSKBI011', name: 'M&R I-Image CTS Ink Black',                    cat: 'ink',         prev: 2   },
       { code: 'RLBW5',       name: 'Rutland NPT Street Fighter Low Bleed White',   cat: 'ink',         prev: 24  },
       // CONSUMABLES
-      { code: 'AGMGS20',     name: 'AGM Golden Stripper – Ink & Emulsion Remover', cat: 'consumables', prev: 2   },
-      { code: 'AGMCSW20',    name: 'AGM Green Citrus Wash',                        cat: 'consumables', prev: 3   },
-      { code: 'APMA12',      name: 'Albachem Prem Mist Adhesive 14oz (Box)',        cat: 'consumables', prev: 60  },
-      { code: 'ASA12',       name: 'Anchorweld Spray N Stick Aerosol 350gr',       cat: 'consumables', prev: 120 },
+      { code: 'AGMGS20',     name: 'AGM Golden Stripper – Ink & Emulsion Remover', cat: 'consumables', prev: 3   },
+      { code: 'AGMCSW20',    name: 'AGM Green Citrus Wash',                        cat: 'consumables', prev: 10  },
+      { code: 'APMA12',      name: 'Albachem Prem Mist Adhesive 14oz (Box)',        cat: 'consumables', prev: 94  },
+      { code: 'ASA12',       name: 'Anchorweld Spray N Stick Aerosol 350gr',       cat: 'consumables', prev: 180 },
       { code: 'SGHUG',       name: 'Saati Grafic HU Dual Cure Emulsion Violet 4.5kg', cat: 'consumables', prev: 6 },
       { code: 'FBPR',        name: 'Franmar Biggie Pad Red (Medium)',               cat: 'consumables', prev: 36  },
       // DTF
@@ -595,6 +601,24 @@ const CUSTOMERS = {
     products: [
       // INK
       { code: 'UPLCPW5',     name: 'Union G2 Sport LC LB Polar White', cat: 'ink' },
+      // UPLC Unimix Low Cure Colour Mixing System
+      { code: 'UPLC-2050-1G', name: 'Unimix Orange 1 Gal', cat: 'ink' },
+      { code: 'UPLC-2100-1G', name: 'Unimix Neon Yellow 1 Gal', cat: 'ink' },
+      { code: 'UPLC-6000-1G', name: 'Unimix Green 1 Gal', cat: 'ink' },
+      { code: 'UPLC-2000-1G', name: 'Unimix Yellow 1 Gal', cat: 'ink' },
+      { code: 'UPLC-4006-1G', name: 'Unimix Violet 1 Gal', cat: 'ink' },
+      { code: 'UPLC-4008-1G', name: 'Unimix Cerise 1 Gal', cat: 'ink' },
+      { code: 'UPLC-4100-1G', name: 'Unimix Neon Magenta 1 Gal', cat: 'ink' },
+      { code: 'UPLC-3000-1G', name: 'Unimix Red B/S 1 Gal', cat: 'ink' },
+      { code: 'UPLC-3005-1G', name: 'Unimix Red Y/S 1 Gal', cat: 'ink' },
+      { code: 'UPLC-3100-1G', name: 'Unimix Neon Red 1 Gal', cat: 'ink' },
+      { code: 'UPLC-5000-1G', name: 'Unimix Blue G/S 1 Gal', cat: 'ink' },
+      { code: 'UPLC-5004-1G', name: 'Unimix Blue R/S 1 Gal', cat: 'ink' },
+      { code: 'UPLC-5100-1G', name: 'Unimix Neon Blue 1 Gal', cat: 'ink' },
+      { code: 'UPLC-1000-1G', name: 'Unimix White 1 Gal', cat: 'ink' },
+      { code: 'UPLC-8100-1G', name: 'Unimix Black 1 Gal', cat: 'ink' },
+      { code: 'UPLC-9090-1G', name: 'Unimix Extender Base 1 Gal', cat: 'ink' },
+      { code: 'UPLC-1550-1G', name: 'G2 Sport Barrier Grey 1 Gal', cat: 'ink' },
       { code: 'PADELCW5',    name: 'Union EF Lunar Cotton White', cat: 'ink' },
       { code: 'MRCTSKBI011', name: 'M&R I-Image CTS Ink Black', cat: 'ink' },
       { code: 'MIXEYRSG',    name: 'Union EF Mixopaque Yellow R/S', cat: 'ink' },
@@ -885,9 +909,10 @@ function openModal() {
     <label>Notes (optional)</label>
     <textarea id="orderNotes" placeholder="Any special instructions..."></textarea>
   </div>
-  <div class="modal-actions">
+  <div class="modal-actions" style="flex-wrap:wrap;gap:8px;">
     <button class="modal-cancel" onclick="closeModal()">Back</button>
-    <button class="modal-confirm" onclick="sendOrder()">✉ Send to Matt</button>
+    <button class="modal-cancel" style="flex:1;background:#1a2200;border-color:#e8ff47;color:#e8ff47;" onclick="downloadPDF()">⬇ Save PDF</button>
+    <button class="modal-confirm" style="flex:2;" onclick="sendOrder()">✉ Send to Matt</button>
   </div>`;
 
   content.innerHTML = html;
@@ -1052,6 +1077,131 @@ function sendOrder() {
       </div>
     </div>`;
   });
+}
+
+function buildPDFHTML(cust, repName, dateStr, deliveryAddress, notes) {
+  const catColors = { ink: '#1a3a6e', consumables: '#7a3e00', screens: '#3d1a7a', dtf: '#0a4a30' };
+  const catText =   { ink: '#2a6abf', consumables: '#bf6a00', screens: '#7a4abf', dtf: '#1a9a60' };
+
+  let rows = '';
+  const cats = [...new Set(cust.products.map(p => p.cat))];
+
+  if (cust.isConsignment) {
+    cats.forEach(cat => {
+      const items = cust.products.filter(p => p.cat === cat);
+      const hasData = items.some(p => getCount(p.code).curr !== undefined && getCount(p.code).curr !== '');
+      if (!hasData) return;
+      const bg = catColors[cat] || '#1a1a3a';
+      const tc = catText[cat] || '#4a4abf';
+      rows += `<tr><td colspan="5" style="background:${bg};padding:8px 12px;font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${tc};">${CATEGORIES[cat].label}</td></tr>`;
+      rows += `<tr style="background:#f5f5f5;">
+        <td style="padding:6px 12px;font-family:Arial,sans-serif;font-size:10px;color:#555;font-weight:700;border-bottom:1px solid #ddd;">CODE</td>
+        <td style="padding:6px 12px;font-family:Arial,sans-serif;font-size:10px;color:#555;font-weight:700;border-bottom:1px solid #ddd;">DESCRIPTION</td>
+        <td style="padding:6px 12px;font-family:Arial,sans-serif;font-size:10px;color:#555;font-weight:700;text-align:center;border-bottom:1px solid #ddd;">PREV</td>
+        <td style="padding:6px 12px;font-family:Arial,sans-serif;font-size:10px;color:#555;font-weight:700;text-align:center;border-bottom:1px solid #ddd;">NOW</td>
+        <td style="padding:6px 12px;font-family:Arial,sans-serif;font-size:10px;color:#555;font-weight:700;text-align:center;border-bottom:1px solid #ddd;">TOP-UP</td>
+      </tr>`;
+      items.forEach((p, i) => {
+        const d = getCount(p.code);
+        if (d.curr === undefined || d.curr === '') return;
+        const prevVal = p.prev !== undefined ? p.prev : (d.prev || '—');
+        const usage = !isNaN(prevVal) && !isNaN(d.curr) ? parseFloat(prevVal) - parseFloat(d.curr) : '—';
+        const topup = typeof usage === 'number' ? Math.max(0, usage) : '—';
+        const bg2 = i % 2 === 0 ? '#ffffff' : '#fafafa';
+        const topupStyle = typeof topup === 'number' && topup > 0 ? 'font-weight:700;color:#000;' : 'color:#999;';
+        rows += `<tr style="background:${bg2};">
+          <td style="padding:7px 12px;font-family:'Courier New',monospace;font-size:11px;color:#444;border-bottom:1px solid #eee;white-space:nowrap;">${p.code}</td>
+          <td style="padding:7px 12px;font-family:Arial,sans-serif;font-size:12px;color:#222;border-bottom:1px solid #eee;">${p.name}</td>
+          <td style="padding:7px 12px;font-family:'Courier New',monospace;font-size:12px;color:#999;text-align:center;border-bottom:1px solid #eee;">${prevVal}</td>
+          <td style="padding:7px 12px;font-family:'Courier New',monospace;font-size:12px;color:#222;text-align:center;border-bottom:1px solid #eee;font-weight:700;">${d.curr}</td>
+          <td style="padding:7px 12px;font-family:'Courier New',monospace;font-size:13px;text-align:center;border-bottom:1px solid #eee;${topupStyle}">${topup}</td>
+        </tr>`;
+      });
+    });
+  } else {
+    cats.forEach(cat => {
+      const items = cust.products.filter(p => p.cat === cat);
+      const hasOrder = items.some(p => (getCount(p.code).qty || 0) > 0);
+      if (!hasOrder) return;
+      const bg = catColors[cat] || '#1a1a3a';
+      const tc = catText[cat] || '#4a4abf';
+      rows += `<tr><td colspan="3" style="background:${bg};padding:8px 12px;font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${tc};">${CATEGORIES[cat].label}</td></tr>`;
+      rows += `<tr style="background:#f5f5f5;">
+        <td style="padding:6px 12px;font-family:Arial,sans-serif;font-size:10px;color:#555;font-weight:700;border-bottom:1px solid #ddd;">CODE</td>
+        <td style="padding:6px 12px;font-family:Arial,sans-serif;font-size:10px;color:#555;font-weight:700;border-bottom:1px solid #ddd;">DESCRIPTION</td>
+        <td style="padding:6px 12px;font-family:Arial,sans-serif;font-size:10px;color:#555;font-weight:700;text-align:center;border-bottom:1px solid #ddd;">QTY</td>
+      </tr>`;
+      items.forEach((p, i) => {
+        const qty = getCount(p.code).qty || 0;
+        if (!qty) return;
+        const bg2 = i % 2 === 0 ? '#ffffff' : '#fafafa';
+        rows += `<tr style="background:${bg2};">
+          <td style="padding:7px 12px;font-family:'Courier New',monospace;font-size:11px;color:#444;border-bottom:1px solid #eee;white-space:nowrap;">${p.code}</td>
+          <td style="padding:7px 12px;font-family:Arial,sans-serif;font-size:12px;color:#222;border-bottom:1px solid #eee;">${p.name}</td>
+          <td style="padding:7px 12px;font-family:'Courier New',monospace;font-size:13px;color:#000;font-weight:700;text-align:center;border-bottom:1px solid #eee;">${qty}</td>
+        </tr>`;
+      });
+    });
+  }
+
+  const deliveryBlock = deliveryAddress ? `<tr><td style="padding:5px 0;font-size:11px;color:#666;font-family:Arial,sans-serif;width:120px;">Delivery Address</td><td style="padding:5px 0 5px 16px;font-size:12px;color:#222;font-family:Arial,sans-serif;">${deliveryAddress.replace(/\n/g,'<br>')}</td></tr>` : '';
+  const notesBlock = notes ? `<tr><td style="padding:5px 0;font-size:11px;color:#666;font-family:Arial,sans-serif;">Notes</td><td style="padding:5px 0 5px 16px;font-size:12px;color:#222;font-family:Arial,sans-serif;">${notes}</td></tr>` : '';
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 15mm 12mm; }
+  body { margin:0; padding:0; background:#fff; font-family:Arial,sans-serif; color:#222; }
+  table { border-collapse: collapse; }
+</style>
+</head><body>
+  <!-- Header -->
+  <div style="border-bottom:3px solid #222;padding-bottom:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;">
+    <div>
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#888;margin-bottom:4px;">Jones Brothers Print Technology</div>
+      <div style="font-size:20px;font-weight:800;color:#111;">${cust.name}</div>
+      <div style="font-size:12px;color:#555;margin-top:2px;">${cust.isConsignment ? 'Consignment Count & Top-Up Report' : 'Purchase Order'}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:10px;color:#888;">Date</div>
+      <div style="font-size:13px;font-weight:700;">${dateStr}</div>
+      <div style="font-size:10px;color:#888;margin-top:4px;">Rep</div>
+      <div style="font-size:13px;font-weight:700;">${repName}</div>
+    </div>
+  </div>
+
+  <!-- Meta row -->
+  ${deliveryBlock || notesBlock ? `<table style="width:100%;margin-bottom:16px;border:1px solid #eee;border-radius:4px;"><tbody>${deliveryBlock}${notesBlock}</tbody></table>` : ''}
+
+  <!-- Products -->
+  <table style="width:100%;">
+    ${rows}
+  </table>
+
+  <!-- Footer -->
+  <div style="margin-top:24px;padding-top:10px;border-top:1px solid #ddd;font-size:10px;color:#aaa;display:flex;justify-content:space-between;">
+    <span>Generated by JB Stock Count App</span>
+    <span>${dateStr}</span>
+  </div>
+</body></html>`;
+}
+
+function downloadPDF() {
+  const cust = CUSTOMERS[currentCustomer];
+  const repName = (document.getElementById('repName') && document.getElementById('repName').value.trim()) || localStorage.getItem('repName') || 'Sales Rep';
+  const notes = (document.getElementById('orderNotes') && document.getElementById('orderNotes').value.trim()) || '';
+  const deliveryAddress = (document.getElementById('deliveryAddress') && document.getElementById('deliveryAddress').value.trim()) || '';
+  const dateStr = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const pdfHTML = buildPDFHTML(cust, repName, dateStr, deliveryAddress, notes);
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(pdfHTML);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+  }, 500);
 }
 
 function resetAndClose() {
